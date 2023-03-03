@@ -220,6 +220,10 @@ private class BinaryDataDecodingContainer: BinaryDecodingContainer {
     }
     return data
   }
+	
+  func decodeLeb128<I: BinaryInteger>() throws -> I {
+	return try bufferedData.readLeb128()
+  }
 
   private func containedBuffer() -> BufferedData {
     return BufferedData(reader: AnyBufferedDataSource(read: { recommendedAmount -> Data? in

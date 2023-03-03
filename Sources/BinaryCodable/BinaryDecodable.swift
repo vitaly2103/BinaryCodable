@@ -158,6 +158,8 @@ public protocol BinaryDecodingContainer {
    - returns: A decoding container view into `self`.
    */
   mutating func nestedContainer(maxLength: Int?) -> BinaryDecodingContainer
+	
+  mutating func decodeLeb128<I: BinaryInteger>() throws -> I
 }
 
 // MARK: RawRepresentable extensions

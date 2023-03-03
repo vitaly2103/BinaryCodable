@@ -109,6 +109,98 @@ public final class BufferedData {
       return (data: data, didFindDelimiter: false)
     }
   }
+  
+  public func readLeb128<I: BinaryInteger>() throws -> I {
+    if I.isSigned {
+      if let value = try readLeb128Signed() {
+        return I(value)
+      } else {
+		throw POSIXError(.EFAULT)
+      }
+    } else {
+      if let value = try readLeb128Unsigned() {
+        return I(value)
+      } else {
+	    throw POSIXError(.EFAULT)
+      }
+    }
+  }
+  
+  private func readLeb128Signed() throws -> Int? {
+    var result: Int = 0
+    var shift: Int = 0
+    var count: Int = 0
+    let size: Int = MemoryLayout<Int>.size * 8
+    var lastByte: UInt8 = 0
+    
+    while true {
+      if buffer.isEmpty {
+        guard let data = try reader.read(length: 1) else { break }
+        buffer.append(data)
+      }
+      var isDecoded = false
+      for byte in buffer {
+        lastByte = byte
+        if shift > Int.bitWidth {
+  #if DEBUG
+          print("Conversion to Int will overflow on this platform.")
+  #endif
+          return nil
+        }
+
+        result |= (Int((byte) & 0x7F) << shift)
+        shift += 7
+        count += 1
+        if (byte >> 7) & 1 <= 0 {
+          isDecoded = true
+          break
+        }
+      }
+      if isDecoded {
+        break
+      }
+    }
+
+    if shift < size, (Int((lastByte) & 0x40) >> 6) == 1 {
+      result |= -(1 << shift)
+    }
+    buffer = buffer.dropFirst(count)
+    return result
+    
+  }
+  
+  private func readLeb128Unsigned() throws -> UInt? {
+    var result: UInt = 0
+    var shift: UInt = 0
+    var count: Int = 0
+    while true {
+      if buffer.isEmpty {
+        guard let data = try reader.read(length: 1) else { break }
+        buffer.append(data)
+      }
+      var isDecoded = false
+      for byte in buffer {
+        if shift > UInt.bitWidth {
+  #if DEBUG
+          print("Conversion to UInt will overflow on this platform.")
+  #endif
+          return nil
+        }
+        result |= ((UInt(byte) & 0x7F) << shift)
+        shift += 7
+        count += 1
+        if (byte >> 7) & 1 <= 0 {
+          isDecoded = true
+          break
+        }
+      }
+      if isDecoded {
+        break
+      }
+    }
+    buffer = buffer.dropFirst(count)
+    return result
+  }
 
   // Note: the buffer may never decrease in size which can be a concern for long-running applications.
   // This may need to be changed to a ring buffer implementation, where the ring buffer's size is increased only when
