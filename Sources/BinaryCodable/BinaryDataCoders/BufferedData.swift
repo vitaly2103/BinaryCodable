@@ -162,7 +162,13 @@ public final class BufferedData {
     }
 
     if shift < size, (Int((lastByte) & 0x40) >> 6) == 1 {
-      result |= -(1 << shift)
+	  // NOTE: In C# negated min Int64 value (-9223372036854775808) is the same as original
+	  // but in Swift it provokes crash because max Int64 is 9223372036854775807, 
+	  // so negated min Int64 (9223372036854775808) overflows max possible Int64.
+	  // To avoid crash, we preserve C# behaviour - if the value is min Int64, we do not negate it.
+	  let shiftedValue = 1 << shift
+	  let negatedShiftedValue = shiftedValue == Int.min ? shiftedValue : -shiftedValue
+      result |= negatedShiftedValue
     }
     buffer = buffer.dropFirst(count)
     return result
