@@ -44,12 +44,12 @@ public protocol BinaryEncoder {
 /**
  An error that occurs during the binary encoding of a value.
  */
-public enum BinaryEncodingError: Error {
+public enum BinaryEncodingError: Error, Sendable {
 
   /**
    The context in which the error occurred.
    */
-  public struct Context {
+	public struct Context : Sendable{
 
     /**
      A description of what went wrong, for debugging purposes.

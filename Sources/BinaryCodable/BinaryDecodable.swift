@@ -57,7 +57,7 @@ public enum BinaryDecodingError: Error {
   /**
    The context in which the error occurred.
    */
-  public struct Context {
+	public struct Context : Sendable {
 
     /**
      A description of what went wrong, for debugging purposes.
